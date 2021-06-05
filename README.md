@@ -22,3 +22,4 @@ Docker image for Flutter/Dart dev in VS Code.
 * Add sound tunneling (dev will build speech-to-text and text-to-speech).
 * Add an Android emulator and run over X11 or on host and tunnel.
 * Add support for physical Android device (see https://blog.codemagic.io/how-to-dockerize-flutter-apps/ )
+* Create manual / instructions for DEV teams.
