@@ -1,0 +1,122 @@
+ 
+# Built with arch: amd64 flavor: lxde image: ubuntu:18.04
+#
+################################################################################
+# base system
+################################################################################
+
+FROM ubuntu:20.04
+
+ENV UID=1000
+ENV GID=1000
+ENV USER="developer"
+ENV JAVA_VERSION="11"
+ENV ANDROID_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip"
+ENV ANDROID_VERSION="29"
+ENV ANDROID_BUILD_TOOLS_VERSION="29.0.3"
+ENV ANDROID_ARCHITECTURE="x86_64"
+ENV ANDROID_SDK_ROOT="/home/$USER/android"
+ENV FLUTTER_CHANNEL="stable"
+ENV FLUTTER_VERSION="2.2.1"
+ENV FLUTTER_DOWNLOAD_FILE="flutter_linux_$FLUTTER_VERSION-$FLUTTER_CHANNEL.tar.xz"
+ENV FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_CHANNEL/linux/$FLUTTER_DOWNLOAD_FILE"
+ENV FLUTTER_HOME="/home/$USER/flutter"
+ENV FLUTTER_WEB_PORT="8090"
+ENV FLUTTER_DEBUG_PORT="42000"
+ENV FLUTTER_EMULATOR_NAME="flutter_emulator"
+ENV VSCODE_DOWNLOAD_URL="https://go.microsoft.com/fwlink/?LinkID=760868"
+ENV PATH="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/platforms:$FLUTTER_HOME/bin:$PATH"
+
+RUN sed -i 's#http://archive.ubuntu.com/ubuntu/#mirror://mirrors.ubuntu.com/mirrors.txt#' /etc/apt/sources.list; 
+
+# built-in packages
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt update \
+    && apt upgrade -y \
+    && apt install -y --no-install-recommends --allow-unauthenticated \
+        xfce4 xfce4-goodies xorg dbus-x11 x11-xserver-utils supervisor sudo wget \
+    && apt autoclean -y \
+    && apt autoremove -y
+
+# Install xrdp
+RUN apt update \
+    && apt upgrade -y \
+    && apt install -y --no-install-recommends --allow-unauthenticated \
+        systemctl xrdp xorgxrdp \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN sudo adduser xrdp ssl-cert
+
+RUN apt-get update \
+  && apt-get install --yes --no-install-recommends openjdk-$JAVA_VERSION-jdk curl unzip sed git bash xz-utils libglvnd0 ssh xauth x11-xserver-utils libpulse0 libxcomposite1 libgl1-mesa-glx \
+  && rm -rf /var/lib/{apt,dpkg,cache,log}
+
+# Allow password-less sudo 
+RUN echo "ALL ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+RUN groupadd --gid $GID $USER \
+  && useradd -s /bin/bash --uid $UID --gid $GID -m $USER
+
+RUN usermod -aG sudo developer
+
+WORKDIR /home/$USER
+
+# Install VS Code
+RUN wget $VSCODE_DOWNLOAD_URL -O vscode.deb
+RUN sudo apt install -y ./vscode.deb
+
+# Install .Net
+RUN wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+RUN sudo dpkg -i packages-microsoft-prod.deb
+
+RUN sudo apt-get update; \
+  sudo apt-get install -y apt-transport-https && \
+  sudo apt-get update && \
+  sudo apt-get install -y dotnet-sdk-5.0
+
+RUN sudo apt-get update; \
+  sudo apt-get install -y apt-transport-https && \
+  sudo apt-get update && \
+  sudo apt-get install -y aspnetcore-runtime-5.0
+
+# Install Chrome
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+RUN apt install -y ./google-chrome-stable_current_amd64.deb
+
+# Install NodeJs
+RUN apt-get install -y nodejs
+
+# android sdk
+RUN mkdir -p $ANDROID_SDK_ROOT \
+  && mkdir -p /home/$USER/.android \
+  && touch /home/$USER/.android/repositories.cfg \
+  && curl -o android_tools.zip $ANDROID_TOOLS_URL \
+  && unzip -qq -d "$ANDROID_SDK_ROOT" android_tools.zip \
+  && rm android_tools.zip \
+  && mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/tools \
+  && mv $ANDROID_SDK_ROOT/cmdline-tools/bin $ANDROID_SDK_ROOT/cmdline-tools/tools \
+  && mv $ANDROID_SDK_ROOT/cmdline-tools/lib $ANDROID_SDK_ROOT/cmdline-tools/tools \
+  && yes "y" | sdkmanager "build-tools;$ANDROID_BUILD_TOOLS_VERSION" \
+  && yes "y" | sdkmanager "platforms;android-$ANDROID_VERSION" \
+  && yes "y" | sdkmanager "platform-tools" \
+  && yes "y" | sdkmanager "emulator" \
+  && yes "y" | sdkmanager "system-images;android-$ANDROID_VERSION;google_apis_playstore;$ANDROID_ARCHITECTURE"
+
+# flutter
+RUN git clone https://github.com/flutter/flutter.git -b stable $FLUTTER_HOME \
+  && flutter config --no-analytics \
+  && flutter precache \
+  && yes "y" | flutter doctor --android-licenses \
+  && flutter doctor \
+  && flutter emulators --create \
+  && flutter update-packages
+
+COPY startup.sh /bin/startup.sh
+
+EXPOSE 80
+EXPOSE 3389
+ENV HOME=/home/$USER \
+    SHELL=/bin/bash \
+    DONT_PROMPT_WSL_INSTALL=True
+HEALTHCHECK --interval=30s --timeout=5s CMD curl --fail http://127.0.0.1:6079/api/health
+ENTRYPOINT ["/bin/startup.sh"]
