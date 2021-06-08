@@ -2,7 +2,9 @@
 
 Docker image for Flutter/Dart dev in VS Code.
 
-## Use:
+## Version A
+
+# Use:
 * Install Docker
 * Install and start an X11 server if on Windows (for example VcXsrv)
 * Install VS Code
@@ -17,9 +19,25 @@ Docker image for Flutter/Dart dev in VS Code.
 * 'cd testapp'
 * 'flutter run' should launch Chrome and show the app. It doesn't. You can see why if you run 'google-chrome'. You CAN start Chrome with 'google-chrome --no-sandbox' to confirm that X11 works.
 
-## TODO: 
+# TODO: 
 * Fix Chrome error, so it will start without --no-sandbox and thus will work when flutter run tries to start it.
 * Add sound tunneling (dev will build speech-to-text and text-to-speech).
 * Add an Android emulator and run over X11 or on host and tunnel.
 * Add support for physical Android device (see https://blog.codemagic.io/how-to-dockerize-flutter-apps/ )
 * Create manual / instructions for DEV teams.
+
+
+## Version B
+
+# Use (local):
+* Install Docker
+* Install image with following commandline -p 3389:63389
+* Connect via RDP @ localhost:63389
+* Clone repository
+* From repository run command code .
+
+# TODO:
+* Pass developer password
+* Test sound
+* Test Emulator
+* Create user manual
