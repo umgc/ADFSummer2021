@@ -10,7 +10,8 @@ FROM ubuntu:20.04
 ENV UID=1000
 ENV GID=1000
 ENV USER="developer"
-ENV JAVA_VERSION="11"
+# Use Jave version 8. Version 11 crashes the emulator creation process.
+ENV JAVA_VERSION="8"
 ENV ANDROID_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip"
 ENV ANDROID_VERSION="29"
 ENV ANDROID_BUILD_TOOLS_VERSION="29.0.3"
@@ -24,7 +25,6 @@ ENV FLUTTER_HOME="/home/$USER/flutter"
 ENV FLUTTER_WEB_PORT="8090"
 ENV FLUTTER_DEBUG_PORT="42000"
 ENV FLUTTER_EMULATOR_NAME="flutter_emulator"
-ENV VSCODE_DOWNLOAD_URL="https://go.microsoft.com/fwlink/?LinkID=760868"
 ENV PATH="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/platforms:$FLUTTER_HOME/bin:$PATH"
 
 RUN sed -i 's#http://archive.ubuntu.com/ubuntu/#mirror://mirrors.ubuntu.com/mirrors.txt#' /etc/apt/sources.list; 
@@ -37,6 +37,9 @@ RUN apt update \
         xfce4 xfce4-goodies xorg dbus-x11 x11-xserver-utils supervisor sudo wget \
     && apt autoclean -y \
     && apt autoremove -y
+
+# Instll qemu
+RUN apt install -y qemu qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
 
 # Install xrdp
 RUN apt update \
@@ -62,7 +65,7 @@ RUN usermod -aG sudo developer
 WORKDIR /home/$USER
 
 # Install VS Code
-RUN wget $VSCODE_DOWNLOAD_URL -O vscode.deb
+RUN wget "https://go.microsoft.com/fwlink/?LinkID=760868" -O vscode.deb
 RUN sudo apt install -y ./vscode.deb
 
 # Install .Net
@@ -100,7 +103,7 @@ RUN mkdir -p $ANDROID_SDK_ROOT \
   && yes "y" | sdkmanager "platforms;android-$ANDROID_VERSION" \
   && yes "y" | sdkmanager "platform-tools" \
   && yes "y" | sdkmanager "emulator" \
-  && yes "y" | sdkmanager "system-images;android-$ANDROID_VERSION;google_apis_playstore;$ANDROID_ARCHITECTURE"
+  && yes "y" | sdkmanager --install "system-images;android-$ANDROID_VERSION;google_apis_playstore;$ANDROID_ARCHITECTURE"
 
 # flutter
 RUN git clone https://github.com/flutter/flutter.git -b stable $FLUTTER_HOME \
@@ -110,6 +113,9 @@ RUN git clone https://github.com/flutter/flutter.git -b stable $FLUTTER_HOME \
   && flutter doctor \
   && flutter emulators --create \
   && flutter update-packages
+
+RUN chmod 777 -R /home/developer
+RUN chmod 777 -R /root/.pub-cache
 
 COPY startup.sh /bin/startup.sh
 
