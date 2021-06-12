@@ -27,7 +27,11 @@ ENV FLUTTER_DEBUG_PORT="42000"
 ENV FLUTTER_EMULATOR_NAME="flutter_emulator"
 ENV PATH="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/platforms:$FLUTTER_HOME/bin:$PATH"
 
-RUN sed -i 's#http://archive.ubuntu.com/ubuntu/#mirror://mirrors.ubuntu.com/mirrors.txt#' /etc/apt/sources.list; 
+#Jeroen 06/12/21 this line gets mirrors to let apt-get download from a local mirrir, which should be faster
+#I found that it would grab mirrors that were out of date, and the build would error out.
+#Also, this is a potential security risk, as we're building from whatever is in that last and have to trust
+#that the list is maintained correctly. #paranoid
+#RUN sed -i 's#http://archive.ubuntu.com/ubuntu/#mirror://mirrors.ubuntu.com/mirrors.txt#' /etc/apt/sources.list; 
 
 # built-in packages
 ENV DEBIAN_FRONTEND noninteractive
@@ -57,12 +61,19 @@ RUN apt-get update \
 # Allow password-less sudo 
 RUN echo "ALL ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
+# Set default password to 'password'
 RUN groupadd --gid $GID $USER \
-  && useradd -s /bin/bash --uid $UID --gid $GID -m $USER
+  && useradd -s /bin/bash --uid $UID --gid $GID -m $USER -p "$(openssl passwd -1 password)"
 
 RUN usermod -aG sudo developer
 
 WORKDIR /home/$USER
+
+#Install PulseAudio
+RUN apt-get install -y pavucontrol
+
+#Set default terminal t xfce4-terminal, so button at bottom works
+RUN update-alternatives --set x-terminal-emulator /usr/bin/xfce4-terminal.wrapper
 
 # Install VS Code
 RUN wget "https://go.microsoft.com/fwlink/?LinkID=760868" -O vscode.deb
@@ -118,6 +129,8 @@ RUN chmod 777 -R /home/developer
 RUN chmod 777 -R /root/.pub-cache
 
 COPY startup.sh /bin/startup.sh
+#Jeroen 06/12/21 added chmod because otherwise script would not execute when building on Linux host.
+RUN chmod 777 /bin/startup.sh 
 
 EXPOSE 80
 EXPOSE 3389

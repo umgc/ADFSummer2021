@@ -2,36 +2,11 @@
 
 Docker image for Flutter/Dart dev in VS Code.
 
-## Version A
-
-# Use:
-* Install Docker
-* Install and start an X11 server if on Windows (for example VcXsrv)
-* Install VS Code
-* Launch VS Code Quick Open (Ctrl+P), paste the following command, and press enter: ext install ms-vscode-remote.remote-containers
-* Clone repository
-* Launch VS Code Quick Open (Ctrl+P), find Remote-Containers: Open Folder in Container
-* Choose directory in which repository is cloned.
-* Docker image will be build. You can follow progress by clicking on View Log in bottom right of the VS Code screen.
-* When done, open up a terminal and confirm you are in the image with 'whoami', which should return 'developer'.
-* This is a full Flutter/Dart environment running in Docker, with files saved in the host file system.
-* Start a new Flutter project with 'flutter create testapp'
-* 'cd testapp'
-* 'flutter run' should launch Chrome and show the app. It doesn't. You can see why if you run 'google-chrome'. You CAN start Chrome with 'google-chrome --no-sandbox' to confirm that X11 works.
-
-# TODO: 
-* Fix Chrome error, so it will start without --no-sandbox and thus will work when flutter run tries to start it.
-* Add sound tunneling (dev will build speech-to-text and text-to-speech).
-* Add an Android emulator and run over X11 or on host and tunnel.
-* Add support for physical Android device (see https://blog.codemagic.io/how-to-dockerize-flutter-apps/ )
-* Create manual / instructions for DEV teams.
-
-
-## Version B
-
 # Use (local):
 * Install Docker
-* Install image with following commandline -p 3389:63389
+* Install image with following commandline -p 3389:63389 --privileged
+* If on Linux/Mac, you can also use -p 3389:3389 to have it run on the default RDP port. In Windows, this port might not be available due to the built-in RDP server.
+* The --privileged is needed for Chrome to run in Docker. The only alternaitve is running Chrome with the --no-sandbox flag. This requires more research, as there are security implications.
 * Connect via RDP @ localhost:63389
 * Clone repository
 * From repository run command code .
@@ -41,3 +16,15 @@ Docker image for Flutter/Dart dev in VS Code.
 * Test sound
 * Test Emulator
 * Create user manual
+* Add Flutter/Dart to path (in .rcbash or startup.sh???)
+
+
+# Changelog:
+* Removed version A as X11 pass a no-go due to no sound, and difficulty on Windows.
+* Renamed version B dir to ADF
+* Set default password ('password') for developer, as passwordless login was not working on Linux.
+* Set right terminal in update-alternatives so terminal button works.
+* Added PulseAudio (does not seem to work yet)
+* Added chmod 777 to start-up script. When built on Linux, the script on the local file system, and thus in the container is not executable.
+* Commented out line that sets mirrors. Some mirrors were outdated, and this would halt the build.
+* Updated readme, including comment about --privileged.
