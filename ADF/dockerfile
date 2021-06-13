@@ -147,6 +147,7 @@ RUN chmod 777 -R /root/.pub-cache
 COPY startup.sh /bin/startup.sh
 #Jeroen 06/12/21 added chmod because otherwise script would not execute when building on Linux host.
 RUN chmod 777 /bin/startup.sh 
+RUN adduser root pulse-access
 
 EXPOSE 80
 EXPOSE 3389
