@@ -33,6 +33,9 @@ ENV PATH="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin:$ANDROID_SDK_ROOT/emulator:$
 #that the list is maintained correctly. #paranoid
 #RUN sed -i 's#http://archive.ubuntu.com/ubuntu/#mirror://mirrors.ubuntu.com/mirrors.txt#' /etc/apt/sources.list; 
 
+# Enable source in sources.list, so PulseAudio can build later.
+RUN sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list
+
 # built-in packages
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt update \
@@ -41,8 +44,24 @@ RUN apt update \
         xfce4 xfce4-goodies xorg dbus-x11 x11-xserver-utils supervisor sudo wget \
     && apt autoclean -y \
     && apt autoremove -y
+    
+# Install PulseAudio
+RUN apt-get install -y pavucontrol pulseaudio pulseaudio-utils xfce4-pulseaudio-plugin
+RUN apt-get install git libpulse-dev autoconf m4 intltool build-essential dpkg-dev -y
+RUN apt build-dep pulseaudio -y
 
-# Instll qemu
+WORKDIR /tmp
+RUN apt source pulseaudio && pulsever=$(pulseaudio --version | awk '{print $2}') && cd /tmp/pulseaudio-${pulsever} && ./configure
+
+# Create xrdp sound modules
+# Up to Ubuntu 16 you could just apt-get this, but for unknown reason we now have to build this.
+WORKDIR /tmp
+RUN git clone https://github.com/neutrinolabs/pulseaudio-module-xrdp.git /tmp/pulseaudio-module-xrdp/
+WORKDIR /tmp/pulseaudio-module-xrdp/
+RUN ./bootstrap
+RUN pulsever=$(pulseaudio --version | awk '{print $2}') && ./configure PULSE_DIR="/tmp/pulseaudio-$pulsever" && make install
+
+# Install qemu
 RUN apt install -y qemu qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
 
 # Install xrdp
@@ -68,9 +87,6 @@ RUN groupadd --gid $GID $USER \
 RUN usermod -aG sudo developer
 
 WORKDIR /home/$USER
-
-#Install PulseAudio
-RUN apt-get install -y pavucontrol
 
 #Set default terminal t xfce4-terminal, so button at bottom works
 RUN update-alternatives --set x-terminal-emulator /usr/bin/xfce4-terminal.wrapper
@@ -131,6 +147,7 @@ RUN chmod 777 -R /root/.pub-cache
 COPY startup.sh /bin/startup.sh
 #Jeroen 06/12/21 added chmod because otherwise script would not execute when building on Linux host.
 RUN chmod 777 /bin/startup.sh 
+RUN adduser root pulse-access
 
 EXPOSE 80
 EXPOSE 3389

@@ -20,6 +20,12 @@ echo FLUTTER_DEBUG_PORT="42000" >> /etc/environment
 echo FLUTTER_EMULATOR_NAME="flutter_emulator" >> /etc/environment
 echo PATH="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/platforms:$FLUTTER_HOME/bin:$PATH" >> /etc/environment
 
+# Cleanup to be "stateless" on startup, otherwise pulseaudio daemon can't start
+rm -rf /var/run/pulse /var/lib/pulse /root/.config/pulse
+
+# Start pulseaudio as system wide daemon; for debugging it helps to start in non-daemon mode
+pulseaudio -D --verbose --exit-idle-time=-1 --system --disallow-exit
+
 # Setup RDP Session
 systemctl enable xrdp
 service xrdp restart
