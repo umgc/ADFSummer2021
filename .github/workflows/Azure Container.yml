@@ -36,6 +36,7 @@ jobs:
         with:
           push: true
           tags: ${{ secrets.registry }}/adf:latest
+          context: ./ADF/.
         
         #  service_principal: ${{ secrets.service_principal }}
         #  service_principal_password: ${{ secrets.service_principal_password }}
