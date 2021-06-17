@@ -30,13 +30,17 @@ jobs:
         with:
           service_principal: $principal
           service_principal_password: ${{ secrets.service_principal_password }}
-          tenant: ${{ secrets.tenant }}
-          registry: ${{ secrets.registry }}
-          repository: ${{ secrets.repository }}
+          tenant: $tenant
+          registry: $registry
+          repository: $repository
           image: adf
-          git_access_token: ${{ secrets.git_access_token }}
+          git_access_token: $git_access_token
           dockerfile: ./ADF/dockerfile
         env:
           principal: ${{ secrets.service_principal }}
-          
+          principal_password: ${{ secrets.service_principal_password }}
+          tenant: ${{ secrets.tenant }}
+          registry: ${{ secrets.registry }}
+          repository: ${{ secrets.repository }}
+          git_access_token: ${{ secrets.git_access_token }}
 
