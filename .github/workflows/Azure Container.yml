@@ -29,9 +29,9 @@ jobs:
         uses: ams0/acr-task-github-action@v2
         with:
           service_principal: $principal
-          service_principal_password: ${{ secrets.service_principal_password }}
+          service_principal_password: $principal_password
           tenant: $tenant
-          registry: $registry
+          registry: ${{ secrets.registry }}
           repository: $repository
           image: adf
           git_access_token: $git_access_token
