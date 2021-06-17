@@ -1,7 +1,5 @@
 # This is a basic workflow to help you get started with Actions
-
 name: Test Deploy ADF to Azure
-
 # Controls when the action will run. 
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
@@ -19,28 +17,21 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
+    environment: Azure
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      
+     
       - name: Azure Container Registry Build
         uses: ams0/acr-task-github-action@v2
         with:
-          service_principal: $principal
-          service_principal_password: $principal_password
-          tenant: ${{ secrets.TENANT_ID }}
-          registry: ${{ secrets.REGISTRY }}
-          repository: $repository
-          image: adf
-          git_access_token: $git_access_token
-          dockerfile: ./ADF/dockerfile
-        env:
-          principal: ${{ secrets.service_principal }}
-          principal_password: ${{ secrets.service_principal_password }}
-          tenant: ${{ secrets.TENANT_ID }}
-          registry: ${{ secrets.REGISTRY }}
+          service_principal: ${{ secrets.service_principal }}
+          service_principal_password: ${{ secrets.service_principal_password }}
+          tenant: ${{ secrets.tenant }}
+          registry: ${{ secrets.registry }}
           repository: ${{ secrets.repository }}
+          image: adf
           git_access_token: ${{ secrets.git_access_token }}
+          dockerfile: ./ADF/dockerfile
 
