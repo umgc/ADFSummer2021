@@ -31,7 +31,7 @@ jobs:
           service_principal: $principal
           service_principal_password: $principal_password
           tenant: $tenant
-          registry: ${{ secrets.registry }}
+          registry: ${{ secrets.REGISTRY }}
           repository: $repository
           image: adf
           git_access_token: $git_access_token
@@ -40,7 +40,7 @@ jobs:
           principal: ${{ secrets.service_principal }}
           principal_password: ${{ secrets.service_principal_password }}
           tenant: ${{ secrets.tenant }}
-          registry: ${{ secrets.registry }}
+          registry: ${{ secrets.REGISTRY }}
           repository: ${{ secrets.repository }}
           git_access_token: ${{ secrets.git_access_token }}
 
