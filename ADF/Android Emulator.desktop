@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Android Emulator
+Comment=
+Exec=flutter emulators --launch flutter_emulator
+Icon=
+Path=
+Terminal=false
+StartupNotify=false

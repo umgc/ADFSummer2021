@@ -142,12 +142,31 @@ RUN git clone https://github.com/flutter/flutter.git -b stable $FLUTTER_HOME \
   && flutter update-packages
 
 RUN chmod 777 -R /home/developer
-RUN chmod 777 -R /root/.pub-cache
+#Flutter cache is in /root/ because dockerfile runs as root. Might have to reevaluate this, but since
+#the system is a single user system and is reset every time the image is booted, it doesn't really
+#matter to give everybody access to /root/.
+RUN chmod 777 -R /root/
 
 COPY startup.sh /bin/startup.sh
+
+#Copy wallpaper
+COPY wallpaper.jpg /usr/share/backgrounds/xfce/
+#Copy default desktop config file so default wallpaper will be the one we just copied.
+COPY xfce4-desktop.xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
+
 #Jeroen 06/12/21 added chmod because otherwise script would not execute when building on Linux host.
 RUN chmod 777 /bin/startup.sh 
 RUN adduser root pulse-access
+RUN adduser developer pulse-access
+RUN gpasswd -a $USER kvm
+#Add developer to group systemd-resolve so developer can access /dev/kvm
+RUN adduser developer systemd-resolve 
+
+#Jeroen 06/26/2021 install Dart/Flutter extensions for Code
+RUN /usr/bin/code --install-extension dart-code.flutter --user-data-dir /home/$USER
+
+#Install Iceweasal a.k.a. Firefox
+RUN apt-get -y install iceweasel
 
 EXPOSE 80
 EXPOSE 3389
@@ -155,4 +174,44 @@ ENV HOME=/home/$USER \
     SHELL=/bin/bash \
     DONT_PROMPT_WSL_INSTALL=True
 HEALTHCHECK --interval=30s --timeout=5s CMD curl --fail http://127.0.0.1:6079/api/health
+
+
+#Jeroen 06/26/2021 set environment through /etc/profile
+RUN echo export UID=1000 >> /etc/profile
+RUN echo export GID=1000 >> /etc/profile
+RUN echo export JAVA_VERSION="11" >> /etc/profile
+RUN echo export ANDROID_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip" >> /etc/profile
+RUN echo export ANDROID_VERSION="29" >> /etc/profile
+RUN echo export ANDROID_BUILD_TOOLS_VERSION="29.0.3" >> /etc/profile
+RUN echo export ANDROID_ARCHITECTURE="x86_64" >> /etc/profile
+RUN echo export ANDROID_SDK_ROOT="/home/$USER/android" >> /etc/profile
+RUN echo export FLUTTER_CHANNEL="stable" >> /etc/profile
+RUN echo export FLUTTER_VERSION="2.2.1" >> /etc/profile
+RUN echo export FLUTTER_DOWNLOAD_FILE="flutter_linux_$FLUTTER_VERSION-$FLUTTER_CHANNEL.tar.xz" >> /etc/profile
+RUN echo export FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_CHANNEL/linux/$FLUTTER_DOWNLOAD_FILE" >> /etc/profile
+RUN echo export FLUTTER_HOME="/home/$USER/flutter" >> /etc/profile
+RUN echo export FLUTTER_WEB_PORT="8090" >> /etc/profile
+RUN echo export FLUTTER_DEBUG_PORT="42000" >> /etc/profile
+RUN echo export FLUTTER_EMULATOR_NAME="flutter_emulator" >> /etc/profile
+RUN echo export PATH="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/platforms:$FLUTTER_HOME/bin:$PATH" >> /etc/profile
+RUN echo export HOME=/home/$USER >> /etc/profile
+RUN echo export SHELL=/bin/bash >> /etc/profile
+RUN echo export DONT_PROMPT_WSL_INSTALL=True >> /etc/profile
+RUN echo 'pulseaudio &' >> /etc/profile
+RUN echo 'adfwelcome &' >> /etc/profile
+
+USER developer
+#Create emulator for developer
+RUN flutter emulators --create
+#Install extensions for developer
+RUN /usr/bin/code --install-extension dart-code.flutter
+#Copy desktop launchers
+COPY *.desktop /home/developer/Desktop/
+USER root
+#Make them executable
+RUN chmod 777 /home/developer/Desktop/*.desktop
+
+COPY adfwelcome_1.0.0_amd64.deb /tmp/
+RUN dpkg -i /tmp/adfwelcome_1.0.0_amd64.deb
+
 ENTRYPOINT ["/bin/startup.sh"]
