@@ -198,6 +198,7 @@ RUN echo export HOME=/home/$USER >> /etc/profile
 RUN echo export SHELL=/bin/bash >> /etc/profile
 RUN echo export DONT_PROMPT_WSL_INSTALL=True >> /etc/profile
 RUN echo 'pulseaudio &' >> /etc/profile
+RUN echo 'adfwelcome &' >> /etc/profile
 
 USER developer
 #Create emulator for developer
@@ -210,5 +211,7 @@ USER root
 #Make them executable
 RUN chmod 777 /home/developer/Desktop/*.desktop
 
+COPY adfwelcome_1.0.0_amd64.deb /tmp/
+RUN dpkg -i /tmp/adfwelcome_1.0.0_amd64.deb
 
 ENTRYPOINT ["/bin/startup.sh"]
