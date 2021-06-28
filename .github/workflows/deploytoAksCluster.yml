@@ -1,0 +1,63 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    
+    - uses: actions/checkout@master
+    
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Create ACR
+      id: create-acr
+      run: |
+        az acr create -n umgcacr -g umgcacr80e6-rg --location "East US 2" --sku Standard --admin-enabled
+        echo "::set-output name=acr_username::`az acr credential show -n umgcacr --query username | xargs`"
+        echo "::set-output name=acr_password::`az acr credential show -n umgcacr --query passwords[0].value | xargs`"
+        echo "::add-mask::`az acr credential show -n umgcacr --query passwords[0].value | xargs`"
+
+    - uses: azure/docker-login@v1
+      with:
+        login-server: umgcacr.azurecr.io
+        username: ${{ steps.create-acr.outputs.acr_username }}
+        password: ${{ steps.create-acr.outputs.acr_password }}
+
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/ADF" -f  "ADF/dockerfile" -t umgcacr.azurecr.io/adf:${{ github.sha }} --label dockerfile-path=ADF/dockerfile
+        docker push umgcacr.azurecr.io/adf:${{ github.sha }}
+    
+    - uses: azure/k8s-set-context@v1
+      id: login
+      with:
+         kubeconfig: ${{ secrets.aks_adf_kubeConfig }}
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep adf8893 | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace adf8893`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: adf8893
+        container-registry-url: umgcacr.azurecr.io
+        container-registry-username: ${{ steps.create-acr.outputs.acr_username }}
+        container-registry-password: ${{ steps.create-acr.outputs.acr_password }}
+        secret-name: adfdockerauth
+       
+    - uses: azure/k8s-deploy@v1.2
+      with:
+        namespace: adf8893
+        manifests: |
+          manifests/deployment.yml
+          manifests/service.yml
+        images: |
+          umgcacr.azurecr.io/adf:${{ github.sha }}
+        imagepullsecrets: |
+          adfdockerauth   
