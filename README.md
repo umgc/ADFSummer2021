@@ -15,7 +15,6 @@ Docker image for dev environment.
 * Test sound
 * Test Emulator
 * Create user manual
-* Add Flutter/Dart to path (in .rcbash or startup.sh???)
 * Chrome crashes often
 * GUI push/pull app
 
