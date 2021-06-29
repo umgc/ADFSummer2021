@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: "adfaks-2715"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "adfaks-2715"
+  template:
+    metadata:
+      labels:
+        app: "adfaks-2715"
+    spec:
+      containers:
+        - name: "adfaks-2715"
+          image: "umgcacr.azurecr.io/adfaks"
+          ports:
+          - containerPort: 3389
