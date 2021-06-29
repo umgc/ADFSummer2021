@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Setup RDP Session
-systemctl enable xrdp
-service xrdp restart
-systemctl status xrdp
+sudo systemctl enable xrdp
+sudo service xrdp restart
+sudo systemctl status xrdp
 
 /bin/bash
