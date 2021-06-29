@@ -20,6 +20,15 @@ Docker image for dev environment.
 * GUI push/pull app
 
 # Changelog:
+Rob 6/28/2021
+* Change build order to keep most things cached during build and only rebuild items likely to change
+* Remove second Dart Install command
+* Convert CRLF -> LF
+* Allow passwords to be passed in via environment variable
+
+Jeroen 6/26/2021
+* Add Welcome Screen
+
 Jeroen 06/14/2021
 * Fixed sound
 
